@@ -1,4 +1,5 @@
 import random
+import numpy as np
 
 class Robot(object):
 
@@ -7,6 +8,7 @@ class Robot(object):
         self.maze = maze
         self.valid_actions = self.maze.valid_actions
         self.state = None
+        self.next_state = None
         self.action = None
 
         # Set Parameters of the Learning Robot
@@ -26,6 +28,11 @@ class Robot(object):
         """
         self.state = self.sense_state()
         self.create_Qtable_line(self.state)
+        # 指数衰减
+        self.epsilon = self.epsilon * 0.5
+        # 线性衰减
+        #self.t += 1
+        #self.epsilon = self.epsilon0 / self.t
 
     def set_status(self, learning=False, testing=False):
         """
@@ -42,9 +49,11 @@ class Robot(object):
         """
         if self.testing:
             # TODO 1. No random choice when testing
-            pass
+            epsilon = 0
         else:
             # TODO 2. Update parameters when learning
+            #print(self.state)
+            #print(self.Qtable)
             pass
 
         return self.epsilon
@@ -53,9 +62,9 @@ class Robot(object):
         """
         Get the current state of the robot. In this
         """
-
         # TODO 3. Return robot's current state
-        return None
+        state = self.maze.sense_robot()
+        return state
 
     def create_Qtable_line(self, state):
         """
@@ -66,39 +75,54 @@ class Robot(object):
         # Qtable[state] ={'u':xx, 'd':xx, ...}
         # If Qtable[state] already exits, then do
         # not change it.
-        pass
+        if not state in self.Qtable:
+            self.Qtable[state] = {'u':0, 'd':0, 'r':0, 'l':0}
 
     def choose_action(self):
         """
         Return an action according to given rules
         """
-        def is_random_exploration():
+        def is_random_exploration(epsilon):
 
             # TODO 5. Return whether do random choice
             # hint: generate a random number, and compare
             # it with epsilon
-            pass
+            probs = [epsilon, 1-epsilon]
+            choose = np.random.choice(np.arange(2), p=probs)
+            return choose < 1
 
+        action = None
         if self.learning:
-            if is_random_exploration():
+            if is_random_exploration(self.epsilon):
                 # TODO 6. Return random choose aciton
-                return None
+                action = self.valid_actions[random.randrange(0,len(self.valid_actions) - 1)]
+                return action
             else:
                 # TODO 7. Return action with highest q value
-                return None
+                qline = self.Qtable[self.state]
+                action = max(qline, key=qline.get)
+                return action
         elif self.testing:
             # TODO 7. choose action with highest q value
+            qline = self.Qtable[self.state]
+            action = max(qline, key=qline.get)
+            return action
         else:
             # TODO 6. Return random choose aciton
+            action = self.valid_actions[random.randrange(0,len(self.valid_actions) - 1)]
+            return action
 
     def update_Qtable(self, r, action, next_state):
         """
         Update the qtable according to the given rule.
         """
         if self.learning:
-            pass
             # TODO 8. When learning, update the q table according
             # to the given rules
+            qline_next = self.Qtable[next_state]
+            qline_next_max = qline_next[max(qline_next, key=qline_next.get)]
+            Qsa = self.Qtable[self.state][action]
+            self.Qtable[self.state][action] = Qsa + self.alpha * (r + self.gamma * qline_next_max - Qsa)
 
     def update(self):
         """
