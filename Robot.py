@@ -3,7 +3,7 @@ import numpy as np
 
 class Robot(object):
 
-    def __init__(self, maze, alpha=0.5, gamma=0.9, epsilon0=0.5):
+    def __init__(self, maze, alpha=0.5, gamma=0.9, epsilon0=0.5, is_linear=False):
 
         self.maze = maze
         self.valid_actions = self.maze.valid_actions
@@ -14,6 +14,7 @@ class Robot(object):
         # Set Parameters of the Learning Robot
         self.alpha = alpha
         self.gamma = gamma
+        self.is_linear = is_linear
 
         self.epsilon0 = epsilon0
         self.epsilon = epsilon0
@@ -28,11 +29,12 @@ class Robot(object):
         """
         self.state = self.sense_state()
         self.create_Qtable_line(self.state)
-        # 指数衰减
-        self.epsilon = self.epsilon * 0.5
-        # 线性衰减
-        #self.t += 1
-        #self.epsilon = self.epsilon0 / self.t
+        # 指数衰减/线性衰减
+        if not self.is_linear:
+            self.epsilon = self.epsilon * 0.5
+        else:    
+            self.t += 1
+            self.epsilon = self.epsilon / self.t
 
     def set_status(self, learning=False, testing=False):
         """
@@ -75,9 +77,8 @@ class Robot(object):
         # Qtable[state] ={'u':xx, 'd':xx, ...}
         # If Qtable[state] already exits, then do
         # not change it.
-        if not state in self.Qtable:
-            self.Qtable[state] = {'u':0, 'd':0, 'r':0, 'l':0}
-
+        self.Qtable.setdefault(state, {a: 0.0 for a in self.valid_actions})
+    
     def choose_action(self):
         """
         Return an action according to given rules
@@ -119,8 +120,7 @@ class Robot(object):
         if self.learning:
             # TODO 8. When learning, update the q table according
             # to the given rules
-            qline_next = self.Qtable[next_state]
-            qline_next_max = qline_next[max(qline_next, key=qline_next.get)]
+            qline_next_max = max(self.Qtable[next_state].values())
             Qsa = self.Qtable[self.state][action]
             self.Qtable[self.state][action] = Qsa + self.alpha * (r + self.gamma * qline_next_max - Qsa)
 

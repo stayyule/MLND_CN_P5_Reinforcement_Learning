@@ -62,7 +62,7 @@ class Maze(object):
         self.place_robot()
         self.set_reward()
 
-    def __generate_maze(self, height=21, width=27, complexity=.25, density=.25):
+    def __generate_maze(self, height=21, width=27, complexity=.5, density=.5):
         """
         Generate a random maze, based on:
         https://en.wikipedia.org/wiki/Maze_generation_algorithm
